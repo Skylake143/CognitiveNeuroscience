@@ -31,10 +31,12 @@ def check_accuracy(loader, model):
         for x, y in loader:
             x = x.to(device)
             y = y.to(device)
-            x = x.reshape(x.shape[0], -1)
+            
+            #x = x.reshape(x.shape[0], -1)
 
             # Forward pass: compute the model output
             scores = model(x)
+
             _, predictions = scores.max(1)  # Get the index of the max log-probability
             num_correct += (predictions == y).sum()  # Count correct predictions
             num_samples += predictions.size(0)  # Count total samples
@@ -107,10 +109,10 @@ if __name__ =="__main__":
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)
 
     #Initialize the network
-    model = models.NNConvolutionalThreeHiddenLayers(28,28, num_classes=num_classes).to(device)
+    model = models.NNConvolutionalOneHiddenLayer(28,28, num_classes=num_classes).to(device)
 
     #Train model
-    train(test_loader, model)
+    train(train_loader, model)
     
     #Final accuracy check on training and test sets
     check_accuracy(train_loader, model)

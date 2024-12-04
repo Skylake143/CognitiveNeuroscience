@@ -116,6 +116,7 @@ class NNConvolutionalOneHiddenLayer(nn.Module):
             torch.Tensor
                 The output tensor after passing through the network.
         """
+        x = x.view(-1, 1, 28, 28)  # Reshape input to [batch_size, 1, 28, 28]
         x = self.conv1(x)
         x = x.view(x.size(0), -1)
         x = F.relu(x)
@@ -137,6 +138,7 @@ class NNConvolutionalThreeHiddenLayers(nn.Module):
         self.fcoutput = nn.Linear(128, num_classes)
 
     def forward(self, x):
+        x = x.view(-1, 1, 28, 28)  # Reshape input to [batch_size, 1, 28, 28]
         x = self.conv1(x)
         x = F.relu(x)
         x = self.conv2(x)
