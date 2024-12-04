@@ -15,9 +15,11 @@ class NNOneHiddenLayer(nn.Module):
             hidden layer: Fully connected layer with 50 neurons
             output layer: fully connected layer with num_class outputs (10  for MNIST (digits 0 to 9))
 
+        Roughly based on: https://medium.com/@myringoleMLGOD/simple-neural-network-for-dummies-in-pytorch-a-step-by-step-guide-38c4b1c914c0
+        
         Parameters:
-            input_size: int
-                The size of the input
+            input_height & input_width: int
+                The size of the image
             num_classes: int
                 The number of classes we want to predict
         """
@@ -48,12 +50,14 @@ class NNThreeHiddenLayers(nn.Module):
         """
         Basic fully connected feedforward neural network with
             input layer: for MNIST 784 (28x28)
-            hidden layer: 3 layers of 50 neurons
+            hidden layer: 3 layers of 512, 256 and 128 neurons
             output layer: for MNIST 10 (digits 0 to 9)
 
+        Roughly based on: 
+
         Parameters:
-            input_size: int
-                The size of the input
+            input_height & input_width: int
+                The size of the image
             num_classes: int
                 The number of classes we want to predict
         """
@@ -94,8 +98,8 @@ class NNConvolutionalOneHiddenLayer(nn.Module):
             output layer: for MNIST 10 (digits 0 to 9)
 
         Parameters:
-            input_size: int
-                The size of the input
+            input_height & input_width: int
+                The size of the image
             num_classes: int
                 The number of classes we want to predict
         """
@@ -126,6 +130,21 @@ class NNConvolutionalOneHiddenLayer(nn.Module):
     
 class NNConvolutionalThreeHiddenLayers(nn.Module):
     def __init__(self,input_height, input_width, num_classes):
+        '''
+        Basic convolutional neural network with a convultional connection and a linear connection
+            input layer: 1 for loading the whole image
+            hidden layer: 50
+            output layer: for MNIST 10 (digits 0 to 9)
+
+        Based on: https://github.com/pytorch/examples/blob/main/mnist/main.py
+        
+        Parameters:
+            input_height & input_width: int
+                The size of the image
+            num_classes: int
+                The number of classes we want to predict
+        
+        '''
         super(NNConvolutionalThreeHiddenLayers, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 3, 1)
         self.conv2 = nn.Conv2d(32, 64, 3, 1)
@@ -138,6 +157,17 @@ class NNConvolutionalThreeHiddenLayers(nn.Module):
         self.fcoutput = nn.Linear(128, num_classes)
 
     def forward(self, x):
+        """
+        Define the forward pass of the neural network.
+
+        Parameters:
+            x: torch.Tensor
+                The input tensor.
+
+        Returns:
+            torch.Tensor
+                The output tensor after passing through the network.
+        """
         x = x.view(-1, 1, 28, 28)  # Reshape input to [batch_size, 1, 28, 28]
         x = self.conv1(x)
         x = F.relu(x)

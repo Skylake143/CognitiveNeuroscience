@@ -15,6 +15,8 @@ def check_accuracy(loader, model):
     """
     Checks the accuracy of the model on the given dataset loader.
 
+    Based on the tutorial of https://medium.com/@myringoleMLGOD/simple-neural-network-for-dummies-in-pytorch-a-step-by-step-guide-38c4b1c914c0
+
     Parameters:
         loader: DataLoader
             The DataLoader for the dataset to check accuracy on.
@@ -57,6 +59,8 @@ def train(train_loader, model, num_epochs=100):
     '''
     Trains the model 
 
+    Based on the tutorial: https://medium.com/@myringoleMLGOD/simple-neural-network-for-dummies-in-pytorch-a-step-by-step-guide-38c4b1c914c0
+
     Parameters: 
         train_loader: DataLoader
             The DataLoader for the dataset to perform training on
@@ -74,9 +78,6 @@ def train(train_loader, model, num_epochs=100):
         for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
             data = data.to(device)
             targets = targets.to(device)
-            
-            # Reshape data to (batch_size, input_size), if it is directly fed into linear network
-            #data = data.reshape(data.shape[0], -1)
 
             # Forward pass: compute the model output
             scores = model(data)
@@ -172,10 +173,10 @@ if __name__ =="__main__":
     num_epochs = 100
 
     #Load data
-    train_dataset = datasets.MNIST(root="dataset/", download=True, train=True, transform=transforms.ToTensor())
+    train_dataset = datasets.MNIST(root="SimpleNeuralNetwork/dataset/", download=True, train=True, transform=transforms.ToTensor())
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 
-    test_dataset = datasets.MNIST(root="dataset/", download=True, train=False, transform=transforms.ToTensor())
+    test_dataset = datasets.MNIST(root="SimpleNeuralNetwork/dataset/", download=True, train=False, transform=transforms.ToTensor())
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)
 
     verification_data_X = np.load("SimpleNeuralNetwork/dataset/verification/digits_X.npy")
