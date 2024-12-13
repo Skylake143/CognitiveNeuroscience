@@ -10,6 +10,8 @@ from torch import optim
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
+from scipy.signal import savgol_filter
+
 
 def check_accuracy(loader, model):
     """
@@ -55,7 +57,7 @@ def check_accuracy(loader, model):
     model.train()  # Set the model back to training mode
     return accuracy
 
-def train(train_loader, model, num_epochs=100):
+def train(train_loader,test_loader,verification_loader, model, num_epochs=100):
     '''
     Trains the model 
 
@@ -66,12 +68,18 @@ def train(train_loader, model, num_epochs=100):
             The DataLoader for the dataset to perform training on
         model: nn.Module
             The neural network model
+    Returns: 
+        model: nn.Model 
+            The trained neural network model
+        accuracies: List
+            List of lists
+            Each list is one epoch and contains train-, test- and verification accuracy
     '''
-
     #Define loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+    accuracies = []
     #Train the network
     for epoch in range(num_epochs):
         print(f"Epoch [{epoch + 1}/{num_epochs}]")
@@ -89,7 +97,47 @@ def train(train_loader, model, num_epochs=100):
 
             # Optimization step: update the model parameters
             optimizer.step()
-    return model
+
+        accuracy_train = check_accuracy(train_loader, model)
+        accuracy_test = check_accuracy(test_loader, model)
+        accuracy_verification = check_accuracy(verification_loader, model)
+        accuracies.append([accuracy_train,accuracy_test,accuracy_verification])
+    
+    return model, accuracies
+
+def epochs_plot(model_name,accuracies, begin=1, end=100):
+    '''
+    Creats a line plot and a bar plot.
+    Compares the train, test and verification accuracy of the three models
+
+    Parameters:
+        model_name: Str
+            Name for file naming
+        accuracies: List
+            List of lists
+            Each list is one epoch and contains train-, test- and verification accuracy
+    '''
+
+    train_accuracies = accuracies[:, 0]
+    test_accuracies = accuracies[:, 1]
+    verification_accuracies = accuracies[:, 2]
+
+    # Apply Savitzky-Golay filter for smoothing
+    smoothed_train_accuracies = savgol_filter(train_accuracies, 10, 2)
+    smoothed_test_accuracies = savgol_filter(test_accuracies, 10, 2)
+    smoothed_verification_accuracies = savgol_filter(verification_accuracies, 5, 2)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(list(range(begin, end + 1)), smoothed_train_accuracies[begin-1:end+1], label="Training accuracy")
+    plt.plot(list(range(begin, end + 1)), smoothed_test_accuracies[begin-1:end+1], label="Test accuracy")
+
+    #plt.xticks(range(begin, end + 1))
+    plt.title("Accuracy over epochs")
+    plt.xlabel("Epoch")
+    plt.ylabel("Model Accuracy (%)")
+    plt.legend()
+    plt.savefig(f'SimpleNeuralNetwork/plots/epochPlot{model_name}.png', dpi=300)
+    plt.show()
 
 def comparison_plot(accuracies):
     '''
@@ -112,25 +160,24 @@ def comparison_plot(accuracies):
     plt.plot(models, test_accuracies, label='Test Accuracy', marker='o')
     plt.plot(models, verification_accuracies, label='Verification Accuracy', marker='o')
     plt.xlabel('Model')
-    plt.ylabel('Accuracy')
+    plt.ylabel('Model Accuracy (%)')
     plt.title('Model Accuracies')
     plt.legend(loc='lower right')
     plt.grid(True)
-    plt.savefig(f'SimpleNeuralNetwork/plots/lineplot{accuracies[0]['hyperparameters']}.png')
+    plt.savefig(f'SimpleNeuralNetwork/plots/lineplot{accuracies[0]['hyperparameters']}.png',dpi=300)
     plt.show()
 
     # Bar plot
-    x = np.arange(len(models))  # the label locations
-    width = 0.2  # the width of the bars
+    x = np.arange(len(models))
+    width = 0.2 #Width of the bars
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(7, 6))
     rects1 = ax.bar(x - width - 0.05, train_accuracies, width, label='Train Accuracy')
     rects2 = ax.bar(x, test_accuracies, width, label='Test Accuracy')
     rects3 = ax.bar(x + width + 0.05, verification_accuracies, width, label='Verification Accuracy')
 
-    # Add some text for labels, title and custom x-axis tick labels
     ax.set_xlabel('Model')
-    ax.set_ylabel('Accuracy')
+    ax.set_ylabel('Model Accuracy (%)')
     ax.set_title('Model Accuracies')
     ax.set_xticks(x)
     ax.set_xticklabels(models)
@@ -151,8 +198,7 @@ def comparison_plot(accuracies):
     autolabel(rects3)
 
     fig.tight_layout()
-    #plt.grid(True)
-    plt.savefig(f'SimpleNeuralNetwork/plots/barplot{accuracies[0]['hyperparameters']}.png')
+    plt.savefig(f'SimpleNeuralNetwork/plots/barplot{accuracies[0]['hyperparameters']}.png',dpi=300)
     plt.show()
 
 if __name__ =="__main__":
@@ -170,7 +216,7 @@ if __name__ =="__main__":
     num_classes = 10  # digits 0-9
     learning_rate = 0.001
     batch_size = 64
-    num_epochs = 100
+    num_epochs = 50
 
     #Load data
     train_dataset = datasets.MNIST(root="SimpleNeuralNetwork/dataset/", download=True, train=True, transform=transforms.ToTensor())
@@ -190,37 +236,39 @@ if __name__ =="__main__":
     verification_dataset = TensorDataset(verification_data_X, verification_data_y)
     verification_loader = DataLoader(verification_dataset, batch_size=batch_size, shuffle=False)
 
+    model = models.NNThreeHiddenLayers(28,28,num_classes=num_classes).to(device)
+
     #Train models
     for ModelType in [models.NNOneHiddenLayer, models.NNThreeHiddenLayers, models.NNConvolutionalThreeHiddenLayers]:
         model = ModelType(28,28,num_classes=num_classes).to(device)
         model_name = model.__class__.__name__
         model_path = f"SimpleNeuralNetwork/models/{model_name}lr{learning_rate}batch{batch_size}epochs{num_epochs}.pth"
+        accuracies_path = f"SimpleNeuralNetwork/accuracies/{model_name}lr{learning_rate}batch{batch_size}epochs{num_epochs}.npy"
         if not os.path.exists(model_path):
             print(f"Training model: {model_name}")
-            output_model = train(train_loader, model, num_epochs)
+            output_model, accuracies_list = train(train_loader, test_loader,verification_loader,model, num_epochs)
             
             torch.save(output_model.state_dict(), model_path)
-            print(f"Saved model: {model_name}")
+            np.save(accuracies_path,np.array(accuracies_list))
+            print(f"Saved model and accuracies: {model_name}")
         else: 
             print(f"Model {model_name} already trained")
 
-    # List to store accuracies for plotting
+    # List to store accuracies for plottings
     accuracies = []
-
     #Load models and calculate final accuracy training and test sets
-    for ModelType in [models.NNOneHiddenLayer, models.NNThreeHiddenLayers, models.NNConvolutionalThreeHiddenLayers]:
-        model = ModelType(28, 28, num_classes=num_classes).to(device)
-        model_name = model.__class__.__name__
-        model_path = f"SimpleNeuralNetwork/models/{model_name}lr{learning_rate}batch{batch_size}epochs{num_epochs}.pth"
+    for model_name in ["NNOneHiddenLayer", "NNThreeHiddenLayers", "NNConvolutionalThreeHiddenLayers"]:
+        accuracies_path = f"SimpleNeuralNetwork/accuracies/{model_name}lr{learning_rate}batch{batch_size}epochs{num_epochs}.npy"
+        if os.path.exists(accuracies_path):
+            print(f"Load Accuracies: {model_name} from {accuracies_path}")
+            loaded_accuracies = np.load(accuracies_path)
 
-        if os.path.exists(model_path):
-            print(f"Loaded model: {model_name} from {model_path}")
-            model.load_state_dict(torch.load(model_path, weights_only=True))
+            #Load accuracies from file
+            accuracy_train = loaded_accuracies[-1][0]
+            accuracy_test = loaded_accuracies[-1][1]
+            accuracy_verification = loaded_accuracies[-1][2]
 
-            accuracy_train = check_accuracy(train_loader, model)
-            accuracy_test = check_accuracy(test_loader, model)
-            accuracy_verification = check_accuracy(verification_loader, model)
-
+            #Save them for comparison plot
             accuracies.append({
                 'model': model_name,
                 'hyperparameters': f'lr{learning_rate}batch{batch_size}epochs{num_epochs}',
@@ -228,6 +276,9 @@ if __name__ =="__main__":
                 'test_accuracy': accuracy_test,
                 'verification_accuracy': accuracy_verification
             })
+
+            #Create accuracies plot
+            epochs_plot(model_name,loaded_accuracies,1,num_epochs)
         else:
             print(f"Model {model_name} not found at {model_path}")
 
