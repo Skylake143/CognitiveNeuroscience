@@ -201,7 +201,7 @@ def comparison_plot(accuracies):
     plt.savefig(f'SimpleNeuralNetwork/plots/barplot{accuracies[0]['hyperparameters']}.png',dpi=300)
     plt.show()
 
-if __name__ =="__main__":
+def main():
     # Set up device
     if torch.backends.mps.is_available():
         device = torch.device("mps")
@@ -283,3 +283,6 @@ if __name__ =="__main__":
             print(f"Model {model_name} not found at {model_path}")
 
     comparison_plot(accuracies)
+
+if __name__ =="__main__":
+    main()
