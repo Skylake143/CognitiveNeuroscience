@@ -164,7 +164,8 @@ def comparison_plot(accuracies):
     plt.title('Model Accuracies')
     plt.legend(loc='lower right')
     plt.grid(True)
-    plt.savefig(f'SimpleNeuralNetwork/plots/lineplot{accuracies[0]['hyperparameters']}.png',dpi=300)
+    hyperparameter_str = accuracies[0]['hyperparameters']
+    plt.savefig(f'SimpleNeuralNetwork/plots/lineplot{hyperparameter_str}.png',dpi=300)
     plt.show()
 
     # Bar plot
@@ -198,7 +199,8 @@ def comparison_plot(accuracies):
     autolabel(rects3)
 
     fig.tight_layout()
-    plt.savefig(f'SimpleNeuralNetwork/plots/barplot{accuracies[0]['hyperparameters']}.png',dpi=300)
+    hyperparameter_str = str(accuracies[0]['hyperparameters'])
+    plt.savefig(f'SimpleNeuralNetwork/plots/barplot{hyperparameter_str}.png',dpi=300)
     plt.show()
 
 def main():
