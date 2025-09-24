@@ -87,12 +87,14 @@ def train(train_loader,test_loader,verification_loader, model, num_epochs=100):
             data = data.to(device)
             targets = targets.to(device)
 
+            # Clear gradients from previous iteration
+            optimizer.zero_grad()
+
             # Forward pass: compute the model output
             scores = model(data)
             loss = criterion(scores, targets)
 
             # Backward pass: compute the gradients
-            optimizer.zero_grad()
             loss.backward()
 
             # Optimization step: update the model parameters
